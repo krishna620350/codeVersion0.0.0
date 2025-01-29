@@ -23,4 +23,4 @@ jobs:
             - name: Delete old docker image
               run: docker rm -f codeversion-container
             - name: run docker container
-              run: docker run -d -p 5000:5000 -name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
+              run: docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
