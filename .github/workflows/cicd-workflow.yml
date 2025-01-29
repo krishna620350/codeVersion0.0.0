@@ -1,0 +1,26 @@
+name: CICD
+on:
+    push:
+        branches: [master]
+jobs:
+    build:
+        runs-on: [ubuntu-latest]
+        steps:
+            - name: checkout source
+              uses: actions/checkout@v3
+            - name: login to docker hub
+              run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            - name: build docker image
+              run: docker build -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
+            - name: push docker image
+              run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+    deploy:
+        needs: build
+        runs-on: [aws-ec2]
+        steps:
+            - name: pull docker image
+              run: docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+            - name: Delete old docker image
+              run: docker rm -f codeversion-container
+            - name: run docker container
+              run: docker run -d -p 5000:5000 -name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
