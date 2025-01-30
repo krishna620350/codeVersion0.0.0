@@ -20,8 +20,8 @@ jobs:
         steps:
             - name: start AWS runner
               run: |
-                aws ec2 start-instances --instance-ids ${{ secrets.AWS_INSTANCE_ID}}
-                aws ec2 wait instance-running --instance-ids ${{ secrets.AWS_INSTANCE_ID}}
+                aws ec2 start-instances --instance-ids ${{ secrets.AWS_INSTANCE_ID}} --region ap-south-1
+                aws ec2 wait instance-running --instance-ids ${{ secrets.AWS_INSTANCE_ID}} --region ap-south-1
             - name: check runner status
               run: |
                 while ! curl -s http://ip-172-31-8-31:8080; do
