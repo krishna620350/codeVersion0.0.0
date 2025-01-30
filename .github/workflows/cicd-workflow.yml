@@ -14,13 +14,28 @@ jobs:
               run: docker build -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
             - name: push docker image
               run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
-    deploy:
+    aws:
         needs: build
         runs-on: [ubuntu-latest]
         steps:
+            - name: start AWS runner
+              run: |
+                aws ec2 start-instances --instance-ids ${{ secrets.AWS_INSTANCE_ID}}
+                aws ec2 wait instance-running --instance-ids ${{ secrets.AWS_INSTANCE_ID}}
+            - name: check runner status
+              run: |
+                while ! curl -s http://ip-172-31-8-31:8080; do
+                  echo "Waiting for runner to be ready..."
+                  sleep 5
+                done
+            - name: navigate to actions-runner directory
+              run: ssh -o StrictHostKeyChecking=no -i /path/to/your/key.pem ubuntu@ip-172-31-8-31 'cd actions-runner && ./run.sh'
+    deploy:
+        needs: aws
+        runs-on: self-hosted
             - name: pull docker image
               run: docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
-            - name: Delete old docker image
-              run: docker rm -f codeversion-container
+            - name: delete old docker container
+              run: docker rm -f codeversion-container || true
             - name: run docker container
               run: docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
