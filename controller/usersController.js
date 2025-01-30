@@ -17,7 +17,7 @@ class UsersController {
             if (headersValue === true) {
                 const { name } = req.body;
                 if (!name) {
-                    res.status(201).json({message: 'data is incorrect please enter correct data'});
+                    res.status(201).json({message: 'data is incorrect.'});
                 }
                 const result = await userDatabase.addUser(name);
                 res.status(200).json(result);
