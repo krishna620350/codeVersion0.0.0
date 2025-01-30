@@ -2,6 +2,8 @@ name: CICD
 on:
     push:
         branches: [master]
+    pull_request:
+        branches: [master]
 jobs:
     build:
         runs-on: [ubuntu-latest]
@@ -16,11 +18,25 @@ jobs:
               run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
     deploy:
         needs: build
-        runs-on: self-hosted
+        runs-on: [ubuntu-latest]
+        env:
+            SSH_KEY: ${{ secrets.SSH_KEY }}
+            KEY_FILE_NAME: ${{secrets.KEY_FILE_NAME}}
+            AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
         steps:
-            - name: pull docker image
-              run: docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
-            - name: delete old docker container
-              run: docker rm -f codeversion-container || true
-            - name: run docker container
-              run: docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
+            - name: create SSH key file
+              run: echo "$SSH_KEY" | tr -d '\r' > $KEY_FILE_NAME
+            - name: set permissions for SSH key file
+              run: chmod 600 $KEY_FILE_NAME
+            - name: verify SSH key file
+              run: cat $KEY_FILE_NAME
+            - name: execute Docker commands on aws
+              run: |
+                ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+                  docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+                  docker rm -f codeversion-container || true
+                  docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
+                  exit
+                EOF
+            - name: permanently delete SSH key file
+              run: shred -u $KEY_FILE_NAME
