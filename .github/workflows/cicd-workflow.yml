@@ -16,7 +16,7 @@ jobs:
               run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
     deploy:
         needs: build
-        runs-on: [webserver]
+        runs-on: [weserver]
         steps:
             - name: pull docker image
               run: docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
