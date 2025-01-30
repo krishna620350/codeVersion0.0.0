@@ -30,7 +30,7 @@ jobs:
                 aws ec2 wait instance-running --instance-ids ${{ secrets.AWS_INSTANCE_ID}} --region ${{ secrets.AWS_REGION}}
             - name: check runner status
               run: |
-                while ! curl -s http://ip-172-31-8-31:8080; do
+                while ! curl -s http://13.203.174.134:8080; do
                   echo "Waiting for runner to be ready..."
                   sleep 5
                 done
