@@ -14,7 +14,7 @@ jobs:
               run: docker build -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
             - name: push docker image
               run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
-    aws:
+    deploy:
         needs: build
         runs-on: [ubuntu-latest]
         steps:
@@ -30,9 +30,6 @@ jobs:
                 done
             - name: navigate to actions-runner directory
               run: ssh -o StrictHostKeyChecking=no -i /path/to/your/key.pem ubuntu@ip-172-31-8-31 'cd actions-runner && ./run.sh'
-    deploy:
-        needs: aws
-        runs-on: self-hosted
             - name: pull docker image
               run: docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
             - name: delete old docker container
