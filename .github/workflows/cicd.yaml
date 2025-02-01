@@ -8,6 +8,10 @@ jobs:
         steps:
             - name: checkout source
               uses: actions/checkout@v3
+            - name: configure docker credential helper
+              run: |
+                mkdir -p ~/.docker
+                echo '{"credsStore": "secretservice"}' > ~/.docker/config.json
             - name: login to docker hub
               run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             - name: create dummy Dockerfile if not exists
