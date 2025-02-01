@@ -54,7 +54,7 @@ jobs:
                   echo "PORT=5002" > .env && chmod 600 .env
                   docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
                   docker rm -f codeversionwork-container || true
-                  docker run --env-file .env -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
+                  docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
                   exit
                 EOF
             - name: permanently delete SSH key file
