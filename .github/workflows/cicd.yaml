@@ -8,10 +8,6 @@ jobs:
         steps:
             - name: checkout source
               uses: actions/checkout@v3
-            - name: configure docker credential helper
-              run: |
-                mkdir -p ~/.docker
-                echo '{"credsStore": "secretservice"}' > ~/.docker/config.json
             - name: login to docker hub
               run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
             - name: create dummy Dockerfile if not exists
@@ -42,6 +38,9 @@ jobs:
             - name: execute Docker commands on aws
               run: |
                 ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+                  docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
+                  docker rm -f codeversionwork-container || true
+                  docker run -d -p 5000:5000 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
                   exit
                 EOF
             - name: permanently delete SSH key file
