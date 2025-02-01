@@ -10,10 +10,14 @@ jobs:
               uses: actions/checkout@v3
             - name: login to docker hub
               run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-            - name: create Dockerfile with required permissions
+            - name: create or update Dockerfile with required permissions
               run: |
+                if [ -f Dockerfile ]; then
+                  echo "${{ secrets.ENV_DOCKER }}" > Dockerfile
+                else
                   echo "${{ secrets.ENV_DOCKER }}" > Dockerfile
                   chmod 600 Dockerfile
+                fi
             - name: check Dockerfile exists
               run: test -f Dockerfile
             - name: build docker image
