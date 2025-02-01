@@ -38,6 +38,19 @@ jobs:
             - name: execute Docker commands on aws
               run: |
                 ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+                  if ! command -v docker &> /dev/null; then
+                    echo "Docker not found, installing..."
+                    sudo apt update
+                    sudo apt install docker.io -y
+                  else
+                    echo "Docker is already installed, checking for updates..."
+                    sudo apt-get update
+                    sudo apt-get install --only-upgrade docker.io -y
+                  fi
+                  if [ $(sudo stat -c "%a" /var/run/docker.sock) -ne 666 ]; then
+                    sudo chmod 666 /var/run/docker.sock
+                  fi
+                  
                   docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
                   docker rm -f codeversionwork-container || true
                   docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
