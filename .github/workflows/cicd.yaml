@@ -13,7 +13,7 @@ jobs:
             - name: create Dockerfile with required permissions
               run: |
                 if [ ! -f Dockerfile ]; then
-                  echo -e ${{ secrets.ENV_DOCKER }} > Dockerfile
+                  echo "${{ secrets.ENV_DOCKER }}" > Dockerfile
                   chmod 600 Dockerfile
                 fi
             - name: check Dockerfile exists
