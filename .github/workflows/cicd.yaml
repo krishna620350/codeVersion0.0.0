@@ -40,7 +40,7 @@ jobs:
                 ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
                   docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
                   docker rm -f codeversionwork-container || true
-                  docker run -d -p 5000:5000 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
+                  docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
                   exit
                 EOF
             - name: permanently delete SSH key file
