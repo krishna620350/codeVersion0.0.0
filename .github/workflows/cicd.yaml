@@ -10,6 +10,8 @@ jobs:
               uses: actions/checkout@v3
             - name: login to docker hub
               run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            - name: permanently delete Dockerfile
+              run: shred -u Dockerfile
             - name: create Dockerfile with required permissions
               run: |
                 if [ ! -f Dockerfile ]; then
