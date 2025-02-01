@@ -9,7 +9,13 @@ jobs:
             - name: checkout source
               uses: actions/checkout@v3
             - name: login to docker hub
-              run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+              run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            - name: create Dockerfile with required permissions
+              run: |
+                if [ ! -f Dockerfile ]; then
+                  echo -e ${{ secrets.ENV_DOCKER }} > Dockerfile
+                  chmod 600 Dockerfile
+                fi
             - name: check Dockerfile exists
               run: test -f Dockerfile
             - name: build docker image
@@ -45,10 +51,10 @@ jobs:
                   if [ $(sudo stat -c "%a" /var/run/docker.sock) -ne 666 ]; then
                     sudo chmod 666 /var/run/docker.sock
                   fi
-                  
+                  echo "PORT=5002" > .env && chmod 600 .env
                   docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
                   docker rm -f codeversionwork-container || true
-                  docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
+                  docker run --env-file .env -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
                   exit
                 EOF
             - name: permanently delete SSH key file
