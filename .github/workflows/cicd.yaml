@@ -61,5 +61,13 @@ jobs:
                   docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
                   exit
                 EOF
+            - name: verify container is running
+              run: |
+                ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+                  docker ps -a
+                  docker logs codeversionwork-container
+                  curl -I http://localhost:5002
+                  exit
+                EOF
             - name: permanently delete SSH key file
               run: shred -u $KEY_FILE_NAME
