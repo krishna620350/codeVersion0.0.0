@@ -2,6 +2,8 @@ name: CICD
 on:
     push:
         branches: [work]
+    pull_request:
+        branches: [work]
 jobs:
     build:
         runs-on: [ubuntu-latest]
@@ -55,7 +57,6 @@ jobs:
                   if [ $(sudo stat -c "%a" /var/run/docker.sock) -ne 666 ]; then
                     sudo chmod 666 /var/run/docker.sock
                   fi
-                  echo "PORT=5002" > .env && chmod 600 .env
                   docker pull ${{ secrets.DOCKER_USERNAME }}/codeversionwork:latest
                   docker rm -f codeversionwork-container || true
                   docker run -d -p 5002:5002 --name codeversionwork-container ${{ secrets.DOCKER_USERNAME }}/codeversionwork
