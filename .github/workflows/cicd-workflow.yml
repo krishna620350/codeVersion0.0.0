@@ -35,9 +35,6 @@ jobs:
       - name: Build docker image (no cache)
         run: |
           docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
-          docker run --entrypoint /bin/bash ${{ secrets.DOCKER_USERNAME }}/codeversion -c "cat /app/.env"
-
-
       # Push the built image to Docker Hub
       - name: Push docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
@@ -112,9 +109,6 @@ jobs:
 
             # Check logs of the deployed container
             docker logs codeversion-container
-            
-            # Optionally, check .env file inside the container
-            docker exec codeversion-container cat /app/.env
 
             # Perform a basic HTTP request to check if the app is running
             curl -I http://localhost:5000
