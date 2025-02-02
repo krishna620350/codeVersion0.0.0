@@ -33,7 +33,10 @@ jobs:
 
       # Build the Docker image with no cache to ensure a fresh build every time
       - name: Build docker image (no cache)
-        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
+        run: |
+          docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
+          docker run -it --entrypoint /bin/bash ${{ secrets.DOCKER_USERNAME }}/codeversion -c "cat /app/.env"
+
 
       # Push the built image to Docker Hub
       - name: Push docker image
@@ -83,7 +86,9 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
 
             # Remove any existing container with the same name
-            docker rm -f codeversion-container || true
+            if [ $(docker ps -a -q -f name=codeversion-container) ]; then
+              docker rm -f codeversion-container
+            fi
 
             # Run the container in detached mode on AWS EC2
             docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
