@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(`${process.env.API}/users`, usersRouter);
 
 // Set the port to the value of the PORT environment variable or default to 3000 if not specified
-const port = PORT || 3000;
+const port = PORT || 5000;
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = dirname(__filename);
 // const httpsOption = {
