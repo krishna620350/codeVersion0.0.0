@@ -46,7 +46,7 @@ jobs:
       SSH_KEY: ${{ secrets.SSH_KEY }}
       KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
       AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
-      PORT: ${{ secrets.PORT}}
+      PORT: ${{ secrets.PORT }}
     steps:
       # Create SSH key file for AWS connection
       - name: Create SSH key file
