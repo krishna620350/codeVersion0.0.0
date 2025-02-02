@@ -9,7 +9,7 @@ app.use(express.json());
 
 app.use(`${process.env.API}/users`, usersRouter);
 
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 app.listen(port, () => {
   // Log a message indicating that the server is running and listening on the specified port
   console.log(`Listening on port ${port}`);
