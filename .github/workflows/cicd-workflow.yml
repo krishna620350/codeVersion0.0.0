@@ -4,15 +4,21 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+
 jobs:
   build:
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
-      - name: checkout source
+      # Checkout the repository code
+      - name: Checkout source
         uses: actions/checkout@v3
-      - name: login to docker hub
+
+      # Login to Docker Hub
+      - name: Login to Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
-      - name: create or update Dockerfile with required permissions
+
+      # Create or update Dockerfile with required permissions
+      - name: Create or update Dockerfile with required permissions
         run: |
           if [ -f Dockerfile ]; then
             echo "${{ secrets.ENV_DOCKER_MAIN }}" > Dockerfile
@@ -20,29 +26,44 @@ jobs:
             echo "${{ secrets.ENV_DOCKER_MAIN }}" > Dockerfile
             chmod 600 Dockerfile
           fi
-      - name: check Dockerfile exists
+
+      # Check if Dockerfile exists
+      - name: Check Dockerfile exists
         run: test -f Dockerfile
-      - name: build docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
-      - name: push docker image
+
+      # Build the Docker image with no cache to ensure a fresh build every time
+      - name: Build docker image (no cache)
+        run: docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
+
+      # Push the built image to Docker Hub
+      - name: Push docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+
   deploy:
     needs: build
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
     env:
       SSH_KEY: ${{ secrets.SSH_KEY }}
-      KEY_FILE_NAME: ${{secrets.KEY_FILE_NAME}}
+      KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
       AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
     steps:
-      - name: create SSH key file
+      # Create SSH key file for AWS connection
+      - name: Create SSH key file
         run: echo "$SSH_KEY" | tr -d '\r' > $KEY_FILE_NAME
-      - name: set permissions for SSH key file
+
+      # Set permissions for SSH key file
+      - name: Set permissions for SSH key file
         run: chmod 600 $KEY_FILE_NAME
-      - name: verify SSH key file
+
+      # Verify SSH key file is correct
+      - name: Verify SSH key file
         run: cat $KEY_FILE_NAME
-      - name: execute Docker commands on aws
+
+      # Execute Docker commands on AWS to deploy the container
+      - name: Execute Docker commands on AWS
         run: |
           ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check if Docker is installed
             if ! command -v docker &> /dev/null; then
               echo "Docker not found, installing..."
               sudo apt update
@@ -52,21 +73,44 @@ jobs:
               sudo apt-get update
               sudo apt-get install --only-upgrade docker.io -y
             fi
+
+            # Ensure Docker socket has the correct permissions
             if [ $(sudo stat -c "%a" /var/run/docker.sock) -ne 666 ]; then
               sudo chmod 666 /var/run/docker.sock
             fi
+
+            # Pull the latest image from Docker Hub
             docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+
+            # Remove any existing container with the same name
             docker rm -f codeversion-container || true
+
+            # Run the container in detached mode on AWS EC2
             docker run -d -p 5000:5000 --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
+
+            # Exit the SSH session
             exit
           EOF
-      - name: verify container is running
+
+      # Verify if the container is running correctly
+      - name: Verify container is running
         run: |
           ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check running Docker containers
             docker ps -a
+
+            # Check logs of the deployed container
             docker logs codeversion-container
+            
+            # Optionally, check .env file inside the container
+            docker exec codeversion-container cat /app/.env
+
+            # Perform a basic HTTP request to check if the app is running
             curl -I http://localhost:5000
+            
             exit
           EOF
-      - name: permanently delete SSH key file
+
+      # Permanently delete SSH key file after deployment
+      - name: Permanently delete SSH key file
         run: shred -u $KEY_FILE_NAME
