@@ -87,7 +87,7 @@ jobs:
             docker rm -f codeversion-container || true
 
             # Run the container in detached mode on AWS EC2
-            docker run -d -p $PORT:$PORT --name codeversion-container ${{ secrets.DOCKER_USERNAME }} -e PORT=$PORT/codeversion
+            docker run -d -p $PORT:$PORT --name codeversion-container -e PORT=$PORT ${{ secrets.DOCKER_USERNAME }}/codeversion
 
             # Exit the SSH session
             exit
