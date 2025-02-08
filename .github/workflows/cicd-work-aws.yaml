@@ -1,0 +1,62 @@
+name: CICD
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  SSH_KEY: ${{ secrets.SSH_KEY }}
+  KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
+  AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
+  GIT_REPO: ${{ secrets.GIT_REPO }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository code
+      - name: Checkout source
+        uses: actions/checkout@v3
+        # Create SSH key file for AWS connection
+      - name: Create SSH key file
+        run: echo "$SSH_KEY" | tr -d '\r' > $KEY_FILE_NAME
+
+      - name: Set permissions for SSH key file
+        run: chmod 600 $KEY_FILE_NAME
+
+      # Verify SSH key file is correct
+      - name: Verify SSH key file
+        run: cat $KEY_FILE_NAME
+
+      # Execute GIT commands on AWS
+      - name: Execute GIT commands on AWS
+        run: |
+          ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check if GIT is installed
+            if ! command -v git &> /dev/null; then
+              echo "GIT not found, installing..."
+              sudo apt update
+              sudo apt install git -y
+            else
+              echo "GIT is already installed, checking for updates..."
+              sudo apt-get update
+              sudo apt-get install --only-upgrade git -y
+            fi
+            #create a directory for the code
+            mkdir -p /home/ubuntu/codeversion
+            #change the working directory
+            cd /home/ubuntu/codeversion
+            #git init the git repo one time only
+            if [ ! -d /home/ubuntu/codeversion/.git ]; then
+                git init /home/ubuntu/codeversion
+                git remote add origin $GIT_REPO
+            fi
+            #pull the latest code from the repo
+            git pull origin master
+            #create a .env file for the
+            echo "PORT=5000\nAPI=api\v1" > .env
+            EXIT
+        # Permanently delete SSH key file after deployment
+      - name: Permanently delete SSH key file
+        run: shred -u $KEY_FILE_NAME
