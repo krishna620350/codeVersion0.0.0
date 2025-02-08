@@ -10,8 +10,6 @@ env:
   KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
   AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
   GIT_REPO: ${{ secrets.GIT_REPO }}
-  GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-  GITHUB_ACTOR: ${{ secrets.GIT_ACTOR}}
 
 jobs:
   build:
@@ -56,7 +54,7 @@ jobs:
             # Initialize the git repo one time only
             if [ ! -d /home/ubuntu/codeversion/.git ]; then
                 git init /home/ubuntu/codeversion
-                git remote add origin https://github.com/krishna620350/codeVersion0.0.0.git
+                git remote add origin $GIT_REPO
             fi
             git remote -v
             #pull the latest code from the repo

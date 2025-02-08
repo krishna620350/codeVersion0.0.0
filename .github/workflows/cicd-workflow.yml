@@ -1,0 +1,152 @@
+name: CICD
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+env:
+  SSH_KEY: ${{ secrets.SSH_KEY }}
+  KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
+  AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
+  GIT_REPO: ${{ secrets.GIT_REPO }}
+  ENV_DOCKER: ${{ secrets.ENV_DOCKER }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the repository code
+      - name: Checkout source
+        uses: actions/checkout@v3
+        # Create SSH key file for AWS connection
+      - name: Create SSH key file
+        run: echo "$SSH_KEY" | tr -d '\r' > $KEY_FILE_NAME
+
+      - name: Set permissions for SSH key file
+        run: chmod 600 $KEY_FILE_NAME
+
+      # Verify SSH key file is correct
+      - name: Verify SSH key file
+        run: cat $KEY_FILE_NAME
+
+      # Execute GIT commands on AWS
+      - name: Execute GIT commands on AWS
+        run: |
+          ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check if GIT is installed
+            if ! command -v git &> /dev/null; then
+              echo "GIT not found, installing..."
+              sudo apt update
+              sudo apt install git -y
+            else
+              echo "GIT is already installed, checking for updates..."
+              sudo apt-get update
+              sudo apt-get install --only-upgrade git -y
+            fi
+            # Force delete the codeversion directory if it exists
+            if [ -d /home/ubuntu/codeversion ]; then
+                sudo rm -rf /home/ubuntu/codeversion
+            fi
+            #create a directory for the code
+            mkdir -p /home/ubuntu/codeversion
+            #change the working directory
+            cd /home/ubuntu/codeversion
+            # Initialize the git repo one time only
+            if [ ! -d /home/ubuntu/codeversion/.git ]; then
+                git init /home/ubuntu/codeversion
+                git remote add origin $GIT_REPO
+            fi
+            git remote -v
+            #pull the latest code from the repo
+            git pull origin master
+            #create a .env file for the
+            echo -e "$ENV_DOCKER" > .env
+            exit
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
+      AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
+    steps:
+      # Create SSH key file for AWS connection
+      - name: Create SSH key file
+        run: echo "$SSH_KEY" | tr -d '\r' > $KEY_FILE_NAME
+
+      # Set permissions for SSH key file
+      - name: Set permissions for SSH key file
+        run: chmod 600 $KEY_FILE_NAME
+
+      # Verify SSH key file is correct
+      - name: Verify SSH key file
+        run: cat $KEY_FILE_NAME
+
+      # Execute Docker commands on AWS to deploy the container
+      - name: Execute Docker commands on AWS
+        run: |
+          ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check if Docker is installed
+            if ! command -v docker &> /dev/null; then
+              echo "Docker not found, installing..."
+              sudo apt update
+              sudo apt install docker.io -y
+            else
+              echo "Docker is already installed, checking for updates..."
+              sudo apt-get update
+              sudo apt-get install --only-upgrade docker.io -y
+            fi
+
+            # Ensure Docker socket has the correct permissions
+            if [ $(sudo stat -c "%a" /var/run/docker.sock) -ne 666 ]; then
+              sudo chmod 666 /var/run/docker.sock
+            fi
+            #change the working directory
+            cd /home/ubuntu/codeversion
+            #create a Dockerfile with the required permissions
+            if [ -f Dockerfile ]; then
+              echo "${{ secrets.ENV_DOCKER_MAIN }}" > Dockerfile
+            else
+              echo "${{ secrets.ENV_DOCKER_MAIN }}" > Dockerfile
+              chmod 600 Dockerfile
+            fi
+            #login docker
+            docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+            #build docker
+            docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/codeversion .
+            #push docker
+            docker push ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+            # Pull the latest image from Docker Hub
+            docker pull ${{ secrets.DOCKER_USERNAME }}/codeversion:latest
+
+            # Remove any existing container with the same name
+            if [ $(docker ps -a -q -f name=codeversion-container) ]; then
+              docker rm -f codeversion-container
+            fi
+
+            # Run the container in detached mode on AWS EC2
+            docker run -d -p ${{secrets.PORT_MAIN}}:${{secrets.PORT_MAIN}} --name codeversion-container ${{ secrets.DOCKER_USERNAME }}/codeversion
+
+            # Exit the SSH session
+            exit
+          EOF
+
+      # Verify if the container is running correctly
+      - name: Verify container is running
+        run: |
+          ssh -o StrictHostKeyChecking=no -t -i "$KEY_FILE_NAME" $AWS_CONNECTION << 'EOF'
+            # Check running Docker containers
+            docker ps -a
+
+            # Check logs of the deployed container
+            docker logs codeversion-container
+
+            # Perform a basic HTTP request to check if the app is running
+            curl -I http://localhost:5000
+            
+            exit
+          EOF
+
+      # Permanently delete SSH key file after deployment
+      - name: Permanently delete SSH key file
+        run: shred -u $KEY_FILE_NAME
