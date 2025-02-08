@@ -58,11 +58,6 @@ jobs:
                 git init /home/ubuntu/codeversion
                 git remote add origin https://github.com/krishna620350/codeVersion0.0.0.git
             fi
-            # Ensure the remote repository is set correctly
-            git remote set-url origin https://$GITHUB_ACTOR:${{ secrets.GIT_TOKEN }}@github.com/krishna620350/codeVersion0.0.0.git
-            # Verify the remote repository is accessible
-            git ls-remote origin
-            #verify remote repositories
             git remote -v
             #pull the latest code from the repo
             git pull origin master
