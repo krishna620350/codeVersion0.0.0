@@ -10,6 +10,8 @@ env:
   KEY_FILE_NAME: ${{ secrets.KEY_FILE_NAME }}
   AWS_CONNECTION: ${{ secrets.AWS_CONNECTION }}
   GIT_REPO: ${{ secrets.GIT_REPO }}
+  GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+  GITHUB_ACTOR: ${{ secrets.GIT_ACTOR}}
 
 jobs:
   build:
