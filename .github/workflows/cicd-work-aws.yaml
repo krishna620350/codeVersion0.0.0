@@ -52,6 +52,8 @@ jobs:
                 git init /home/ubuntu/codeversion
                 git remote add origin $GIT_REPO
             fi
+            # Ensure the remote repository is set correctly
+            git remote set-url origin $GIT_REPO
             #pull the latest code from the repo
             git pull origin master
             #create a .env file for the
