@@ -54,13 +54,13 @@ jobs:
             # Initialize the git repo one time only
             if [ ! -d /home/ubuntu/codeversion/.git ]; then
                 git init /home/ubuntu/codeversion
-                git remote add origin https://github.com/krishna620350/codeVersion0.0.0.git
+                git remote add origin ${{secrets.GIT_REPO}}
             fi
             git remote -v
             #pull the latest code from the repo
             git pull origin master
             #create a .env file for the
-            echo -e "$ENV_DOCKER" > .env
+            echo -e "${{secrets.ENV_DOCKER}}" > .env
             exit
   deploy:
     needs: build
