@@ -43,6 +43,10 @@ jobs:
               sudo apt-get update
               sudo apt-get install --only-upgrade git -y
             fi
+            # Force delete the codeversion directory if it exists
+            if [ -d /home/ubuntu/codeversion ]; then
+                sudo rm -rf /home/ubuntu/codeversion
+            fi
             #create a directory for the code
             mkdir -p /home/ubuntu/codeversion
             #change the working directory
