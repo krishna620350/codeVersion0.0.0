@@ -58,10 +58,6 @@ jobs:
             fi
             #verify remote repositories
             git remote -v
-            # Ensure the remote repository is set correctly
-            git remote set-url origin $GIT_REPO
-            # Verify the remote repository is accessible
-            git ls-remote origin
             #pull the latest code from the repo
             git pull origin master
             #create a .env file for the
