@@ -54,7 +54,7 @@ jobs:
             #git init the git repo one time only
             if [ ! -d /home/ubuntu/codeversion/.git ]; then
                 git init /home/ubuntu/codeversion
-                git remote add origin $GIT_REPO
+                git remote add origin https://github.com/krishna620350/codeVersion0.0.0.git
             fi
             #verify remote repositories
             git remote -v
